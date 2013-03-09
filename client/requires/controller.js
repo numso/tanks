@@ -4,6 +4,7 @@ var socket = io.connect()
   , t
   ;
 
+$('.lastGame').click(joinLastGame);
 $('.enterGame').click(joinGame);
 $('.gameCode').keypress(function (e) {
   if (e.keyCode === 13)
@@ -23,20 +24,25 @@ socket.on('gameClosed', function () {
   $(document).unbind('orientationchange');
 });
 
-function joinGame(e) {
-  var val  = $('.gameCode').val()
-    , nick = $('.nickname').val() || 'Player';
-  if (!val) {
-    showErr('You must enter a code.');
-    return
-  }
+function joinLastGame(e) {
+  var val  = $(this).data('id');
+  _joinGame(val);
+};
 
+function joinGame(e) {
+  var val  = $('.gameCode').val();
+  if (!val) return showErr('You must enter a code.');
+  _joinGame(val);
+};
+
+function _joinGame(val) {
+  var nick = $('.nickname').val() || 'Player';
   $('.setup').hide();
   $('.loading').show();
-
   $.post('/saveUser', { name: nick });
   socket.emit('newController', { gameCode: val, nick: nick }, function (data) {
     if (data === 'success') {
+      $.post('/saveLastGame', { lastGame: val });
       $('.loading').hide();
       $('.controls').show();
       startGame();
@@ -55,7 +61,7 @@ function showErr(msg) {
 function getConstraints() {
   var analog1 = $('.analog1');
   var analog2 = $('.analog2');
-  var ANALOG = {
+  var ANALOG  = {
     width: analog1.width(),
     height: analog1.height(),
     width2: analog2.width(),
@@ -93,15 +99,14 @@ function getHeight() {
 function startGame() {
   ANALOG = getConstraints();
 
-
   $(document).on('orientationchange', function (e) {
     ANALOG = getConstraints();
   });
 
-  $(document).keypress(function (e) {
-    console.log(e.keyCode);
-    // if (e.keyCode === 13)
-  });
+  // $(document).keypress(function (e) {
+  //   console.log(e.keyCode);
+  //   // if (e.keyCode === 13)
+  // });
 
   $(document).on('touchstart', function (e) {
     e.preventDefault();

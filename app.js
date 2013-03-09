@@ -30,7 +30,7 @@ app.configure(function () {
 
 function setUser(req, res, next) {
   if (!req.session.user) {
-    req.session.user = { name: '' };
+    req.session.user = { name: '', lastGame: 'na' };
   }
   next();
 };
@@ -82,10 +82,6 @@ var server = http.createServer(app).listen(app.get('port'), function () {
   console.log("Express server listening on port " + app.get('port'));
 });
 
-
-
-
-
 function generateUniqueID() {
   var text = '';
   var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -97,9 +93,6 @@ function generateUniqueID() {
 io = io.listen(server);
 
 var GAMES = {};
-// setInterval(function () {
-//   console.log(GAMES);
-// }, 5000);
 
 io.sockets.on('connection', function (socket) {
 
@@ -144,7 +137,6 @@ io.sockets.on('connection', function (socket) {
   });
 
   socket.on('disconnect', function (data) {
-
     // if its a game, disconnect it
     socket.get('gameID', function (err, id) {
       if (id) {
@@ -168,4 +160,3 @@ io.sockets.on('connection', function (socket) {
     });
   });
 });
-

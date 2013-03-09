@@ -11,6 +11,10 @@ exports.init = function (app) {
   app.post('/saveUser',
     saveUser
   );
+
+  app.post('/saveLastGame',
+    saveLastGame
+  );
 };
 
 function setUser(req, res, next) {
@@ -22,5 +26,10 @@ function setUser(req, res, next) {
 
 function saveUser(req, res, next) {
   req.session.user.name = req.body.name;
+  res.send('ok');
+};
+
+function saveLastGame(req, res, next) {
+  req.session.user.lastGame = req.body.lastGame.toUpperCase();
   res.send('ok');
 };

@@ -12,6 +12,9 @@ block content
         input(type='text', placeholder='Game ID').gameCode
       div
         input(type='submit', value='Enter').enterGame
+      if user.lastGame !== 'na'
+        div(style='margin-top: 20px;') Last Game: 
+          input(type='submit', value=user.lastGame, data-id=user.lastGame).lastGame
       .msg
     .loading
       p LOADING THE GAME
