@@ -1,0 +1,13 @@
+extends ../layout
+
+block content
+  .game
+    .login-info
+      .url
+      .code
+
+append scripts
+  script
+    $(function () {
+      require('/client/requires/game');
+    });

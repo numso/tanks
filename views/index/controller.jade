@@ -1,0 +1,32 @@
+extends ../layout
+
+append styles
+  meta(name="viewport", content="width=device-width, user-scalable=no")
+
+block content
+  .controller
+    .setup
+      div
+        input(type='text', placeholder='Nickname', value=user.name).nickname
+      div
+        input(type='text', placeholder='Game ID').gameCode
+      div
+        input(type='submit', value='Enter').enterGame
+      .msg
+    .loading
+      p LOADING THE GAME
+
+    .controls
+      img(src='/img/button.jpg').button
+      img(src='/img/analog1.png').analog1
+      img(src='/img/analog2.png').analog2
+
+    .error
+      p Game Disconnected
+      p Refresh and try again
+
+append scripts
+  script
+    $(function () {
+      require('/client/requires/controller');
+    });
