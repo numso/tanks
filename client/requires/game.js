@@ -1,13 +1,14 @@
+var jadify = require('./render');
+
+$('body').css('background-color', randomColor());
+
 var socket = io.connect();
 
-var TANKWIDTH  = 122
-  , TANKHEIGHT = 53
-  , SPEED      = 5
+var TANK_SIZE  = 53
+  , SPEED      = 5 / 20
   , PLAYERS    = {}
   , BULLETS    = []
   ;
-
-$('body').css('background-color', randomColor());
 
 socket.emit('newGame', {}, function (data) {
   var url = window.location + 'c';
@@ -17,21 +18,30 @@ socket.emit('newGame', {}, function (data) {
 });
 
 socket.on('playerConnected', function (data) {
-  var newX   = Math.floor(Math.random() * (window.innerWidth - TANKWIDTH))
-    , newY   = Math.floor(Math.random() * (window.innerHeight - TANKHEIGHT))
-    , newRot = Math.floor(Math.random() * 360);
-  PLAYERS[data.player] = { x: newX, y: newY, rot: newRot, dx: 0, dy: 0, isExploding: false };
-
-  $('.game').append('<div class="soldier"><div class="nick"><div class="nick-arrow"></div>' + data.nick + '</div><div class="explode"></div><img src="/img/tank.png" id="' + data.player + '"></div>');
+  PLAYERS[data.player] = getRandomPlayer();
+  data.top  = PLAYERS[data.player].x;
+  data.left = PLAYERS[data.player].y;
+  $('.game').append(jadify('tank', data));
 });
 
+function getRandomPlayer() {
+  return {
+    x:    Math.floor(Math.random() * (window.innerWidth - TANK_SIZE)),
+    y:    Math.floor(Math.random() * (window.innerHeight - TANK_SIZE)),
+    rot:  Math.floor(Math.random() * 360),
+    dx:   0,
+    dy:   0,
+    dead: false
+  };
+};
+
 socket.on('playerDisconnected', function (data) {
-  $('#' + data.player).closest('.soldier').remove();
+  $('#' + data.player).remove();
   delete PLAYERS[data.player];
 });
 
 socket.on('pressedButton', function (data) {
-  if (PLAYERS[data.player].isExploding) return;
+  if (PLAYERS[data.player].dead) return;
 
   if (data.val === 'shoot') {
     BULLETS.push(bullet(PLAYERS[data.player]));
@@ -44,20 +54,19 @@ socket.on('pressedButton', function (data) {
   }
 });
 
-var B = 0;
 function bullet(player) {
   var dx = Math.sin((270 - player.rot) * Math.PI / 180)
     , dy = Math.cos((270 - player.rot) * Math.PI / 180)
-    , x  = player.x + TANKWIDTH / 2 + dx * 40
-    , y  = player.y + TANKHEIGHT / 2 + dy * 40;
+    , x  = player.x + TANK_SIZE / 2 + dx * 40
+    , y  = player.y + TANK_SIZE / 2 + dy * 40;
 
-  var myBullet = $('<img>').addClass('bullet').css({ top: y, left: x });
+  var myBullet = $(jadify('bullet', { top: y, left: x }));
   $('.game').append(myBullet);
 
   return {
-    update: function () {
-      x += dx * SPEED * 2;
-      y += dy * SPEED * 2;
+    update: function (dTime) {
+      x += dx * SPEED * dTime * 2;
+      y += dy * SPEED * dTime * 2;
 
       if (x < 0 || y < 0 || x > window.innerWidth || y > window.innerHeight) {
         myBullet.remove();
@@ -75,9 +84,15 @@ function bullet(player) {
     hitsPlayer: function () {
       for (var key in PLAYERS) {
         var p = PLAYERS[key];
-        if (p.isExploding)
+        if (p.dead)
           continue;
-        if (x > p.x + B && x < p.x + TANKHEIGHT - B && y > p.y + B && y < p.y + TANKHEIGHT - B) {
+
+        var cx = p.x + TANK_SIZE / 2
+          , cy = p.y + TANK_SIZE / 2
+          , distance = Math.sqrt(Math.pow(x - cx, 2) + Math.pow(y - cy, 2))
+          ;
+
+        if (distance <= TANK_SIZE - 7) {
           blowUpPlayer(key);
           return true;
         }
@@ -87,10 +102,10 @@ function bullet(player) {
   };
 };
 
-function updateBullets() {
+function updateBullets(dTime) {
   var newBullets = [];
   for (var i = 0; i < BULLETS.length; ++i) {
-    if (BULLETS[i].update()) {
+    if (BULLETS[i].update(dTime)) {
       newBullets.push(BULLETS[i]);
     }
   }
@@ -98,60 +113,80 @@ function updateBullets() {
 };
 
 function blowUpPlayer(key) {
-    PLAYERS[key].isExploding = true;
+    PLAYERS[key].dead = true;
     PLAYERS[key].explodeTime = 0;
-    $('#' + key).closest('.soldier').find('img').hide();
-    $('#' + key).closest('.soldier').find('.explode').show();
+    $('#' + key).find('img').hide();
+    $('#' + key).find('.explode').show();
 };
 
-function updatePlayers() {
+function updatePlayers(dTime) {
   for (var key in PLAYERS) {
-    if (PLAYERS[key].isExploding) {
+    if (PLAYERS[key].dead) {
       PLAYERS[key].explodeTime += 10;
-      var theTime = Math.floor(PLAYERS[key].explodeTime / 40);
+      var theTime = Math.floor(PLAYERS[key].explodeTime / 20);
       if (theTime >= 25) {
-        PLAYERS[key].isExploding = false;
-        $('#' + key).closest('.soldier').find('img').show();
-        $('#' + key).closest('.soldier').find('.explode').hide();
+        PLAYERS[key] = getRandomPlayer();
+        $('#' + key).css({ top: PLAYERS[key].y, left: PLAYERS[key].x });
+        $('#' + key).find('img').show();
+        $('#' + key).find('.explode').hide();
       } else {
         var newX = theTime % 5
           , newY = Math.floor(theTime / 5);
-        $('#' + key).closest('.soldier').find('.explode').css({
-          'background-position-x': (newX * -64) + 'px',
-          'background-position-y': (newY * -64) + 'px'
+        $('#' + key).find('.explode').css({
+          'background-position-x': (newX * -64),
+          'background-position-y': (newY * -64)
         });
       }
       continue;
     }
-    PLAYERS[key].x += SPEED * PLAYERS[key].dx;
-    PLAYERS[key].y += SPEED * PLAYERS[key].dy;
+    PLAYERS[key].x += SPEED * PLAYERS[key].dx * dTime;
+    PLAYERS[key].y += SPEED * PLAYERS[key].dy * dTime;
 
     if (PLAYERS[key].x < 0) PLAYERS[key].x = 0;
     if (PLAYERS[key].y < 0) PLAYERS[key].y = 0;
 
-    if (PLAYERS[key].x > window.innerWidth - TANKWIDTH) PLAYERS[key].x = window.innerWidth - TANKWIDTH;
-    if (PLAYERS[key].y > window.innerHeight - TANKHEIGHT) PLAYERS[key].y = window.innerHeight - TANKHEIGHT;
+    if (PLAYERS[key].x > window.innerWidth - TANK_SIZE) PLAYERS[key].x = window.innerWidth - TANK_SIZE;
+    if (PLAYERS[key].y > window.innerHeight - TANK_SIZE) PLAYERS[key].y = window.innerHeight - TANK_SIZE;
 
-    if (PLAYERS[key].dx !== 0)
+    if (PLAYERS[key].dx !== 0) {
       PLAYERS[key].rot = Math.atan2(PLAYERS[key].dy, PLAYERS[key].dx) * 180 / Math.PI + 180;
+    } else if (PLAYERS[key].dy > 0) {
+      PLAYERS[key].rot = 270;
+    } else if (PLAYERS[key].dy < 0) {
+      PLAYERS[key].rot = 90;
+    }
 
-    // $('#' + key).css('transform', 'translate(PLAYERS[key].x, PLAYERS[key].y)');
-
-    $('#' + key).closest('.soldier').css({
+    $('#' + key).css({
       top: PLAYERS[key].y,
       left: PLAYERS[key].x
     });
 
-    $('#' + key).css({
+    $('#' + key).find('img').css({
       '-webkit-transform': 'rotateZ(' + PLAYERS[key].rot + 'deg)'
     });
   }
 };
 
-setInterval(function () {
-  updateBullets();
-  updatePlayers();
-}, 10);
+var time;
+function gameLoop() {
+  requestAnimationFrame(gameLoop);
+
+  var newTime = Date.now()
+    , dTime   = newTime - time;
+  if (dTime > 20) dTime = 20;
+  time = newTime;
+
+  updateBullets(dTime);
+  updatePlayers(dTime);
+};
+
+function init() {
+  window.requestAnimationFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || function (cb) { window.setTimeout(cb, 1000 / 60); };
+  time = Date.now();
+  requestAnimationFrame(gameLoop);
+};
+
+init();
 
 function randomColor() {
   return '#'+Math.floor(Math.random()*16777215).toString(16);
