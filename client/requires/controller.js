@@ -18,10 +18,12 @@ socket.on('gameClosed', function () {
   $('.controls').hide();
   $('.error').show();
 
+  $(document).unbind('orientationchange');
   $(document).unbind('touchstart');
   $(document).unbind('touchmove');
   $(document).unbind('touchend');
-  $(document).unbind('orientationchange');
+  $(document).unbind('keydown');
+  $(document).unbind('keyup');
 });
 
 function joinLastGame(e) {
@@ -97,16 +99,14 @@ function getHeight() {
 };
 
 function startGame() {
+
+  setupKeys();
+
   ANALOG = getConstraints();
 
   $(document).on('orientationchange', function (e) {
     ANALOG = getConstraints();
   });
-
-  // $(document).keypress(function (e) {
-  //   console.log(e.keyCode);
-  //   // if (e.keyCode === 13)
-  // });
 
   $(document).on('touchstart', function (e) {
     e.preventDefault();
@@ -205,4 +205,42 @@ function sendMovementData() {
 
   // do stuff with PLAYER x, PLAYER y
   socket.emit('input', { val: 'move', x: changedX, y: changedY });
+};
+
+function setupKeys() {
+  var keys = {};
+
+  $(document).keydown(function (e) {
+    if (!keys[e.keyCode]) {
+      keys[e.keyCode] = true;
+      processKey(e.keyCode, true);
+    }
+  });
+
+  $(document).keyup(function (e) {
+    keys[e.keyCode] = false;
+    processKey(e.keyCode, false);
+  });
+
+  function processKey(code, pressed) {
+    if (code === 32) {
+      if (pressed)
+        socket.emit('input', { val: 'shoot'});
+    } else {
+      PLAYER.moving = true;
+      PLAYER.startX = 0;
+      PLAYER.startY = 0;
+      PLAYER.curX   = 0;
+      PLAYER.curY   = 0;
+      if (keys[37]) PLAYER.curX -= CAP;
+      if (keys[38]) PLAYER.curY -= CAP;
+      if (keys[39]) PLAYER.curX += CAP;
+      if (keys[40]) PLAYER.curY += CAP;
+
+      if (PLAYER.curX === 0 && PLAYER.curY === 0)
+        PLAYER.moving = false;
+
+      sendMovementData();
+    }
+  };
 };
