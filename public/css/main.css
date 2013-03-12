@@ -1,0 +1,88 @@
+* {
+  padding: 0;
+  margin: 0;
+  font-family: sans-serif;
+}
+html {
+  height: 100%;
+}
+body {
+  height: 100%;
+}
+.controller .setup {
+  text-align: center;
+  margin-top: 50px;
+}
+.controller .loading {
+  display: none;
+}
+.controller .error {
+  display: none;
+}
+.controller .controls {
+  display: none;
+}
+.controller .controls img {
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.controller .controls .button {
+  width: 50%;
+  float: right;
+}
+.controller .controls .analog1 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+}
+.controller .controls .analog2 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 35%;
+}
+.game .soldier {
+  height: 50px;
+  position: absolute;
+  z-index: 2;
+}
+.game .soldier .explode {
+  display: none;
+  background-image: url("/img/explosion.png");
+  height: 64px;
+  width: 64px;
+}
+.game .soldier .nick {
+  z-index: 3;
+  background-color: #000;
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 5px;
+  position: relative;
+  top: -50px;
+  left: 30px;
+}
+.game .soldier .nick .nick-arrow {
+  position: absolute;
+  top: 28px;
+  left: 15px;
+  border: 7px solid transparent;
+  border-top: 10px solid #000;
+}
+.game .soldier img {
+  position: absolute;
+  top: 0;
+}
+.game .bullet {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: #fff;
+  border-radius: 10px;
+}
+.game .login-info {
+  font-size: 55px;
+  text-align: center;
+  padding-top: 100px;
+}

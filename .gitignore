@@ -13,5 +13,7 @@ Thumbs.db
 ##############
 node_modules
 
-public/css/main.css
-public/js/app.js
+# public/css/main.css
+# public/js/app.js
+
+.dotcloud
